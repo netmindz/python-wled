@@ -27,7 +27,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Coroutine,
     ParamSpec,
     TypeVar,
 )
@@ -36,6 +35,8 @@ from typer import Exit
 from typer import Typer as SyncTyper
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+
     from typer.core import TyperCommand, TyperGroup
 
 _P = ParamSpec("_P")
@@ -52,7 +53,6 @@ class AsyncTyper(SyncTyper):
     # pylint: disable-next=too-many-arguments, too-many-locals
     def callback(  # type: ignore[override] # noqa: PLR0913
         self,
-        name: str | None = None,
         *,
         cls: type[TyperGroup] | None = None,
         invoke_without_command: bool = False,
@@ -76,7 +76,6 @@ class AsyncTyper(SyncTyper):
     ]:
         """Create a new typer callback."""
         super_callback = super().callback(
-            name,
             cls=cls,
             invoke_without_command=invoke_without_command,
             no_args_is_help=no_args_is_help,

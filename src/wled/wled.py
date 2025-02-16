@@ -633,15 +633,20 @@ class WLED:
         if self._device.info.architecture == "esp02":
             gzip = ".gz"
 
+        repo = "wled-dev/WLED"
+
         url = URL.build(scheme="http", host=self.host, port=80, path="/update")
         architecture = self._device.info.architecture.upper()
-        if self._device.info.release is not None:
+        if(self._device.info.product == "MoonModules"):
+            repo = "MoonModules/WLED"
+            update_file = f"WLEDMM_{version}_{self._device.info.release}.bin{gzip}"
+        elif self._device.info.release is not None:
             update_file = f"{self._device.info.brand}_{version}_{self._device.info.release}.bin{gzip}"
         else:
             update_file = f"WLED_{version}_{architecture}{ethernet}.bin{gzip}"
 
         download_url = (
-            "https://github.com/Aircoookie/WLED/releases/download"
+            f"https://github.com/{repo}/releases/download"
             f"/v{version}/{update_file}"
         )
 
@@ -663,7 +668,7 @@ class WLED:
             raise WLEDConnectionTimeoutError(msg) from exception
         except aiohttp.ClientResponseError as exception:
             if exception.status == 404:
-                msg = f"Requested WLED version '{version}' does not exists"
+                msg = f"Requested WLED version '{update_file}' does not exists"
                 raise WLEDUpgradeError(msg) from exception
             msg = (
                 f"Could not download requested WLED version '{version}'"
@@ -719,7 +724,7 @@ class WLEDReleases:
     _close_session: bool = False
 
     @backoff.on_exception(backoff.expo, WLEDConnectionError, max_tries=3, logger=None)
-    async def releases(self) -> Releases:
+    async def releases(self, info) -> Releases:
         """Fetch WLED version information from GitHub.
 
         Returns
@@ -740,10 +745,14 @@ class WLEDReleases:
             self.session = aiohttp.ClientSession()
             self._close_session = True
 
+        repo = "wled-dev/WLED"
+        if(info.product == "MoonModules"):
+            repo = "MoonModules/WLED"
+
         try:
             async with asyncio.timeout(self.request_timeout):
                 response = await self.session.get(
-                    "https://api.github.com/repos/Aircoookie/WLED/releases",
+                    f"https://api.github.com/repos/{repo}/releases",
                     headers={"Accept": "application/json"},
                 )
         except asyncio.TimeoutError as exception:
